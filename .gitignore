@@ -44,3 +44,22 @@ nbdist/
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
+
+######################################################################
+# AI Code Editors
+
+.codebuddy/
+.kiro/
+.qoder/
+.trae/
+.vscode/
+.windsurf/
+.agents/
+.claude/
+
+######################################################################
+# Skills & Documentation
+
+skills/
+skills-lock.json
+doc/

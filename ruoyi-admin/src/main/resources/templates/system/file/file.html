@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+	<th:block th:include="include :: header('文件列表')" />
+</head>
+<body class="gray-bg">
+     <div class="container-div">
+		<div class="row">
+			<div class="col-sm-12 search-collapse">
+				<form id="file-form">
+					<div class="select-list">
+						<ul>
+							<li>
+								文件名称：<input type="text" name="fileName"/>
+							</li>
+							<li>
+								文件类型：<input type="text" name="fileType" placeholder="如 pdf, jpg, xlsx"/>
+							</li>
+							<li>
+								文件分类：
+								<select name="category" th:with="type=${@dict.getType('sys_file_category')}">
+									<option value="">所有</option>
+									<option th:each="dict : ${type}" th:text="${dict.dictLabel}" th:value="${dict.dictValue}"></option>
+								</select>
+							</li>
+							<li class="select-time">
+								<label>上传时间： </label>
+								<input type="text" class="time-input" id="startTime" placeholder="开始时间" name="params[beginTime]"/>
+								<span>-</span>
+								<input type="text" class="time-input" id="endTime" placeholder="结束时间" name="params[endTime]"/>
+							</li>
+							<li>
+								<a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i class="fa fa-search"></i>&nbsp;搜索</a>
+								<a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i class="fa fa-refresh"></i>&nbsp;重置</a>
+							</li>
+						</ul>
+					</div>
+				</form>
+			</div>
+
+	        <div class="btn-group-sm" id="toolbar" role="group">
+		        <a class="btn btn-success" onclick="uploadFile()" shiro:hasPermission="system:file:upload">
+		            <i class="fa fa-upload"></i> 上传
+		        </a>
+		        <a class="btn btn-danger multiple disabled" onclick="$.operate.removeAll()" shiro:hasPermission="system:file:remove">
+		            <i class="fa fa-remove"></i> 删除
+		        </a>
+		        <a class="btn btn-warning" onclick="$.table.exportExcel()" shiro:hasPermission="system:file:export">
+		            <i class="fa fa-download"></i> 导出
+		        </a>
+	        </div>
+	        <div class="col-sm-12 select-table table-striped">
+	            <table id="bootstrap-table"></table>
+	        </div>
+	    </div>
+	</div>
+    <th:block th:include="include :: footer" />
+    <script th:inline="javascript">
+        var downloadFlag = [[${@permission.hasPermi('system:file:download')}]];
+        var removeFlag = [[${@permission.hasPermi('system:file:remove')}]];
+        var categoryDatas = [[${@dict.getType('sys_file_category')}]];
+        var prefix = ctx + "system/file";
+
+        $(function() {
+            var options = {
+                url: prefix + "/list",
+                createUrl: prefix + "/upload",
+                removeUrl: prefix + "/remove",
+                exportUrl: prefix + "/export",
+                sortName: "createTime",
+                sortOrder: "desc",
+                modalName: "文件",
+                columns: [{
+                    checkbox: true
+                },
+                {
+                    field: 'fileId',
+                    title: '文件ID',
+                    visible: false
+                },
+                {
+                    field: 'fileName',
+                    title: '文件名称',
+                    formatter: function(value, row, index) {
+                        return $.table.tooltip(value);
+                    }
+                },
+                {
+                    field: 'fileSize',
+                    title: '文件大小',
+                    sortable: true,
+                    formatter: function(value, row, index) {
+                        return formatFileSize(value);
+                    }
+                },
+                {
+                    field: 'fileType',
+                    title: '文件类型'
+                },
+                {
+                    field: 'category',
+                    title: '文件分类',
+                    formatter: function(value, row, index) {
+                        return $.table.selectDictLabel(categoryDatas, value);
+                    }
+                },
+                {
+                    field: 'createBy',
+                    title: '上传人'
+                },
+                {
+                    field: 'createTime',
+                    title: '上传时间',
+                    sortable: true
+                },
+                {
+                    title: '操作',
+                    align: 'center',
+                    formatter: function(value, row, index) {
+                        var actions = [];
+                        actions.push('<a class="btn btn-primary btn-xs ' + downloadFlag + '" href="javascript:void(0)" onclick="downloadFile(\'' + row.fileId + '\')"><i class="fa fa-download"></i>下载</a> ');
+                        actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.fileId + '\')"><i class="fa fa-remove"></i>删除</a>');
+                        return actions.join('');
+                    }
+                }]
+            };
+            $.table.init(options);
+        });
+
+        /* 文件大小格式化 */
+        function formatFileSize(size) {
+            if (size == null || size == 0) return '0 B';
+            if (size < 1024) return size + ' B';
+            if (size < 1024 * 1024) return (size / 1024).toFixed(2) + ' KB';
+            return (size / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        /* 上传文件 - 打开弹窗 */
+        function uploadFile() {
+            $.modal.open("上传文件", prefix + "/upload");
+        }
+
+        /* 下载文件 */
+        function downloadFile(fileId) {
+            window.location.href = prefix + "/download/" + fileId;
+        }
+    </script>
+</body>
+</html>
